@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monkeytype Auto Typer — Install</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: #e8e8e8;
+      padding: 32px 20px;
+      line-height: 1.5;
+    }
+    main { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .sub { color: #888; margin-bottom: 2rem; }
+    ol { padding-left: 1.25rem; }
+    li { margin-bottom: 0.75rem; }
+    a { color: #e2b714; }
+    button {
+      display: inline-block;
+      margin: 12px 8px 12px 0;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #e2b714;
+      color: #111;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: rgba(255,255,255,0.12);
+      color: #e8e8e8;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    button:hover:not(:disabled) { filter: brightness(1.05); }
+    .ok { color: #6bcf7f; font-weight: 600; display: none; margin-top: 8px; }
+    .box {
+      margin-top: 2rem;
+      padding: 16px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    h2 { font-size: 1.1rem; margin-top: 0; }
+    code { background: rgba(0,0,0,0.35); padding: 2px 6px; border-radius: 4px; }
+    kbd {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Monkeytype Auto Typer</h1>
+    <p class="sub">No Tampermonkey required — runs from your browser console on Monkeytype. <strong>v3.1.0</strong></p>
+
+    <ol>
+      <li>Click <strong>Copy script</strong> below.</li>
+      <li>Open <a href="https://monkeytype.com" target="_blank" rel="noopener">monkeytype.com</a>.</li>
+      <li>Open the console: <kbd>F12</kbd> or <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>J</kbd> (Mac) / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>J</kbd> (Windows).</li>
+      <li>Paste and press <kbd>Enter</kbd>.</li>
+      <li>Press <kbd>Tab</kbd> to start a test, then <strong>Prepare</strong> → <strong>Start</strong>.</li>
+    </ol>
+
+    <button id="copy-btn">Copy script</button>
+    <button class="secondary" id="open-mt">Open Monkeytype</button>
+    <button class="secondary" id="download-btn">Download .js</button>
+    <p class="ok" id="copied-msg">Copied! Paste in the console on monkeytype.com.</p>
+
+    <div class="box">
+      <h2>Run again later</h2>
+      <p>After you refresh the page, paste the script again. Or save it as a <strong>Chrome Snippet</strong> (DevTools → Sources → Snippets).</p>
+    </div>
+
+    <div class="box">
+      <h2>Other install options</h2>
+      <ul>
+        <li><a href="monkeytype-autotyper-console.js">Raw console script</a></li>
+        <li><a href="monkeytype-autotyper.user.js">Tampermonkey userscript</a></li>
+      </ul>
+    </div>
+
+    <div class="box">
+      <h2>Controls</h2>
+      <ul>
+        <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> — start / stop</li>
+        <li><kbd>Escape</kbd> — stop</li>
+        <li>Console: <code>mtAutotyper.setWpm(400)</code></li>
+      </ul>
+    </div>
+  </main>
+
+  <script>
+    const SCRIPT_URL = "monkeytype-autotyper-console.js";
+    let cachedScript = null;
+
+    async function loadScript() {
+      if (cachedScript) return cachedScript;
+      const res = await fetch(SCRIPT_URL);
+      if (!res.ok) throw new Error("Could not load " + SCRIPT_URL);
+      cachedScript = await res.text();
+      return cachedScript;
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+    }
+
+    document.getElementById("open-mt").addEventListener("click", () => {
+      window.open("https://monkeytype.com", "_blank", "noopener");
+    });
+
+    document.getElementById("copy-btn").addEventListener("click", async () => {
+      const copyBtn = document.getElementById("copy-btn");
+      const copiedMsg = document.getElementById("copied-msg");
+      const original = copyBtn.textContent;
+
+      copyBtn.disabled = true;
+      copyBtn.textContent = "Loading…";
+
+      try {
+        const scriptText = (await loadScript()).trim();
+        if (!scriptText) throw new Error("Script is empty");
+        await copyText(scriptText);
+        copiedMsg.style.display = "block";
+        copyBtn.textContent = "Copied!";
+      } catch {
+        alert("Script missing. Open monkeytype-autotyper-console.js and copy it manually.");
+        copyBtn.textContent = original;
+      } finally {
+        setTimeout(() => {
+          copyBtn.textContent = "Copy script";
+          copyBtn.disabled = false;
+        }, 2000);
+      }
+    });
+
+    document.getElementById("download-btn").addEventListener("click", async () => {
+      try {
+        const script = await loadScript();
+        const blob = new Blob([script], { type: "text/javascript;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "monkeytype-autotyper-console.js";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        alert("Download failed. Open monkeytype-autotyper-console.js directly.");
+      }
+    });
+  </script>
+</body>
+</html>
